@@ -57,6 +57,7 @@ private:
 	vector<LPCSTR> fontsToUse;
 	// Text for Game
 	vector<LPCSTR> gameTextList;
+	vector<LPCSTR> gameTextNames;
 	// Game Sounds
 	vector<LPCSTR> soundList;
 	vector<soundType> soundTypes;
@@ -66,6 +67,19 @@ private:
 	int renderWidth, renderHeight;
 	int theScore;
 	string strScore;
+
+	// Create vector array of button textures
+	vector<LPCSTR> btnNameList;
+	vector<LPCSTR> btnTexturesToUse;
+	vector<SDL_Point> btnPos;
+	vector <cButton> theButtons;
+
+	gameState theGameState;
+	cTexture* tempTextTexture;
+	SDL_Rect pos;
+	FPoint scale;
+	btnTypes theBtnType;
+
 };
 
 #endif

@@ -40,6 +40,11 @@ typedef struct
 	float  X;
 	float  Y;
 }FPoint;
+typedef struct
+{
+	int  X;
+	int  Y;
+}IPoint;
 
 inline SDL_Point operator+(SDL_Point const &a, SDL_Point const &b)
 {
@@ -48,4 +53,6 @@ inline SDL_Point operator+(SDL_Point const &a, SDL_Point const &b)
 
 enum class textType {solid, blended, shaded};
 enum class soundType {sfx, music};
+enum class gameState {menu, playing, end};
+enum class btnTypes { exit, play, hscore };
 #endif

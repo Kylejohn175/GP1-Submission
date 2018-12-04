@@ -9,6 +9,7 @@ cGame* cGame::pInstance = NULL;
 static cTextureMgr* theTextureMgr = cTextureMgr::getInstance();
 static cFontMgr* theFontMgr = cFontMgr::getInstance();
 static cSoundMgr* theSoundMgr = cSoundMgr::getInstance();
+static cButtonMgr* theButtonMgr = cButtonMgr::getInstance();
 
 
 /*
@@ -56,12 +57,13 @@ void cGame::initialise(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 	theScore = 0;
 
 	// Store the textures
-	textureName = { "spaceship1", "spaceship2", "laser", "explosion", "theBackground"};
-	texturesToUse = { "Images\\Sprites\\heroShip.png", "Images\\Sprites\\enemyShip.png", "Images\\Sprites\\laser.png", "Images\\Sprites\\explosion.jpg", "Images\\Bkg\\gameBackground.png"};
+	textureName = { "spaceship1", "spaceship2", "laser", "explosion", "gameBackground", "menuBackground"};
+	texturesToUse = { "Images\\Sprites\\heroShip.png", "Images\\Sprites\\enemyShip.png", "Images\\Sprites\\laser.png", "Images\\Sprites\\explosion.jpg", "Images\\Bkg\\gameBackground.png", "Images\\Bkg\\menuBackground.png" };
 	for (int tCount = 0; tCount < (int)textureName.size(); tCount++)
 	{	
 		theTextureMgr->addTexture(textureName[tCount], texturesToUse[tCount]);
 	}
+
 	// Create textures for Game Dialogue (text)
 	fontList = { "digital", "spaceAge", "8bit" };
 	fontsToUse = { "Fonts/digital-7.ttf", "Fonts/space age.ttf", "Fonts/8bit.ttf" };
@@ -69,7 +71,15 @@ void cGame::initialise(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 	{
 		theFontMgr->addFont(fontList[fonts], fontsToUse[fonts], 36);
 	}
-	gameTextList = { "Enemies", "Score : "};
+
+	// Create text Textures
+	gameTextNames = { "enemies", "score", "Title"};
+	gameTextList = { "Enemies" "Score: ", "SPACE DEFENDERS"};
+	for (unsigned int text = 0; text < gameTextNames.size(); text++)
+	{
+		theTextureMgr->addTexture(gameTextNames[text], theFontMgr->getFont("8bit")->createTextTexture(theRenderer, gameTextList[text], textType::solid, { 44, 203, 112, 255 }, { 0, 0, 0, 0 }));
+	}
+
 	strScore = gameTextList[1];
 	strScore += to_string(theScore).c_str();
 	
@@ -77,21 +87,39 @@ void cGame::initialise(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 	theTextureMgr->addTexture("theScore", theFontMgr->getFont("8bit")->createTextTexture(theRenderer, strScore.c_str(), textType::solid, { 0, 255, 0, 255 }, { 0, 0, 0, 0 }));
 
 	// Load game sounds
-	soundList = { "theme", "laser", "explosion" };
-	soundTypes = { soundType::music, soundType::sfx, soundType::sfx };
-	soundsToUse = { "Audio/gameTheme.mp3", "Audio/laser.mp3", "Audio/explosion.mp3" };
+	soundList = { "gametheme", "laser", "explosion", "menutheme", "gameover"};
+	soundTypes = { soundType::music, soundType::sfx, soundType::sfx, soundType::music,soundType::sfx };
+	soundsToUse = { "Audio/gameTheme.mp3", "Audio/laser.mp3", "Audio/explosion.mp3", "Audio/menuTheme.mp3", "Audio/gameover.wav" };
 	for (int sounds = 0; sounds < (int)soundList.size(); sounds++)
 	{
 		theSoundMgr->add(soundList[sounds], soundsToUse[sounds], soundTypes[sounds]);
 	}
 
-	theSoundMgr->getSnd("theme")->play(-1);
+	//Load game buttons
+	btnNameList = { "Start", "Quit", "Highscore" };
+	btnTexturesToUse = { "Images\\Sprites\\start.png", "Images\\Sprites\\quit.png", "Images\\Sprites\\highscore.png"};
+	btnPos = { { 475, 350 },{ 475, 400 },{ 475, 450 } };
+	for (unsigned int bCount = 0; bCount < btnNameList.size(); bCount++)
+	{
+		theTextureMgr->addTexture(btnNameList[bCount], btnTexturesToUse[bCount]);
+	}
+	for (unsigned int bCount = 0; bCount < btnNameList.size(); bCount++)
+	{
+		cButton * newBtn = new cButton();
+		newBtn->setTexture(theTextureMgr->getTexture(btnNameList[bCount]));
+		newBtn->setSpritePos(btnPos[bCount]);
+		newBtn->setSpriteDimensions(theTextureMgr->getTexture(btnNameList[bCount])->getTWidth(), theTextureMgr->getTexture(btnNameList[bCount])->getTHeight());
+		theButtonMgr->add(btnNameList[bCount], newBtn);
+	}
+
+	theGameState = gameState::menu;
+	theBtnType = btnTypes::exit;
 
 	spriteBkgd.setSpritePos({ 0, 0 });
 	spriteBkgd.setTexture(theTextureMgr->getTexture("theBackground"));
 	spriteBkgd.setSpriteDimensions(theTextureMgr->getTexture("theBackground")->getTWidth(), theTextureMgr->getTexture("theBackground")->getTHeight());
 
-	heroShip.setSpritePos({ 500, 350 });
+	heroShip.setSpritePos({ 475 , 600 });
 	heroShip.setTexture(theTextureMgr->getTexture("spaceship1"));
 	heroShip.setSpriteDimensions(theTextureMgr->getTexture("spaceship1")->getTWidth(), theTextureMgr->getTexture("spaceship1")->getTHeight());
 	heroShip.setRocketVelocity(100);
@@ -103,8 +131,8 @@ void cGame::initialise(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 	for (int astro = 0; astro < 5; astro++)
 	{
 		theenemies.push_back(new cAsteroid);
-		theenemies[astro]->setSpritePos({ 100 * AsteroidDis(gen), 50 * AsteroidDis(gen) });
-		theenemies[astro]->setSpriteTranslation({ 100, -50 });
+		theenemies[astro]->setSpritePos({ 900 * AsteroidDis(gen),0 });
+		theenemies[astro]->setSpriteTranslation({ 0, -60 });
 		int randAsteroid = AsteroidTextDis(gen);
 		theenemies[astro]->setTexture(theTextureMgr->getTexture(textureName[randAsteroid]));
 		theenemies[astro]->setSpriteDimensions(theTextureMgr->getTexture(textureName[randAsteroid])->getTWidth(), theTextureMgr->getTexture(textureName[randAsteroid])->getTHeight());
@@ -132,49 +160,98 @@ void cGame::run(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 void cGame::render(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 {
 	SDL_RenderClear(theRenderer);
-	spriteBkgd.render(theRenderer, NULL, NULL, spriteBkgd.getSpriteScale());
-	// Render each asteroid in the vector array
-	for (int draw = 0; draw < (int)theenemies.size(); draw++)
+
+	switch (theGameState)
 	{
-		theenemies[draw]->render(theRenderer, &theenemies[draw]->getSpriteDimensions(), &theenemies[draw]->getSpritePos(), theenemies[draw]->getSpriteRotAngle(), &theenemies[draw]->getSpriteCentre(), theenemies[draw]->getSpriteScale());
-	}
-	// Render each bullet in the vector array
-	for (int draw = 0; draw < (int)thelasers.size(); draw++)
+	case gameState::menu:
 	{
-		thelasers[draw]->render(theRenderer, &thelasers[draw]->getSpriteDimensions(), &thelasers[draw]->getSpritePos(), thelasers[draw]->getSpriteRotAngle(), &thelasers[draw]->getSpriteCentre(), thelasers[draw]->getSpriteScale());
+		//theSoundMgr->getSnd("menutheme")->play(-1); 
+
+		//spriteBkgd.setTexture(theTextureMgr->getTexture("menuBackground"));
+		//spriteBkgd.setSpriteDimensions(theTextureMgr->getTexture("menuBackground")->getTWidth(), theTextureMgr->getTexture("menuBackground")->getTHeight());
+		//spriteBkgd.render(theRenderer, NULL, NULL, spriteBkgd.getSpriteScale());
+
+		//// Render the Title
+		//tempTextTexture = theTextureMgr->getTexture("Title");
+		//pos = { 150, 150, tempTextTexture->getTextureRect().w, tempTextTexture->getTextureRect().h };
+		//scale = { 1, 1 };
+		//tempTextTexture->renderTexture(theRenderer, tempTextTexture->getTexture(), &tempTextTexture->getTextureRect(), &pos, scale);
+
+		//// Render Button
+		//theButtonMgr->getBtn("Start")->setSpritePos({ 400, 375 });
+		//theButtonMgr->getBtn("Start")->render(theRenderer, &theButtonMgr->getBtn("Start")->getSpriteDimensions(), &theButtonMgr->getBtn("Start")->getSpritePos(), theButtonMgr->getBtn("Start")->getSpriteScale());
+		//theButtonMgr->getBtn("Quit")->setSpritePos({ 400, 425 });
+		//theButtonMgr->getBtn("Quit")->render(theRenderer, &theButtonMgr->getBtn("Quit")->getSpriteDimensions(), &theButtonMgr->getBtn("Quit")->getSpritePos(), theButtonMgr->getBtn("Quit")->getSpriteScale());
+		//theButtonMgr->getBtn("Highscore")->setSpritePos({ 400, 475 });
+		//theButtonMgr->getBtn("Highscore")->render(theRenderer, &theButtonMgr->getBtn("Highscore")->getSpriteDimensions(), &theButtonMgr->getBtn("Highscore")->getSpritePos(), theButtonMgr->getBtn("Highscore")->getSpriteScale());
 	}
-	// Render each explosion in the vector array
-	for (int draw = 0; draw < (int)theExplosions.size(); draw++)
+	break;
+
+	case gameState::playing:
+
 	{
-		theExplosions[draw]->render(theRenderer, &theExplosions[draw]->getSourceRect(), &theExplosions[draw]->getSpritePos(), theExplosions[draw]->getSpriteScale());
+		theSoundMgr->getSnd("gametheme")->play(-1);
+
+		spriteBkgd.render(theRenderer, NULL, NULL, spriteBkgd.getSpriteScale());
+		// Render each asteroid in the vector array
+		for (int draw = 0; draw < (int)theenemies.size(); draw++)
+		{
+			theenemies[draw]->render(theRenderer, &theenemies[draw]->getSpriteDimensions(), &theenemies[draw]->getSpritePos(), theenemies[draw]->getSpriteRotAngle(), &theenemies[draw]->getSpriteCentre(), theenemies[draw]->getSpriteScale());
+		}
+		// Render each bullet in the vector array
+		for (int draw = 0; draw < (int)thelasers.size(); draw++)
+		{
+			thelasers[draw]->render(theRenderer, &thelasers[draw]->getSpriteDimensions(), &thelasers[draw]->getSpritePos(), thelasers[draw]->getSpriteRotAngle(), &thelasers[draw]->getSpriteCentre(), thelasers[draw]->getSpriteScale());
+		}
+		// Render each explosion in the vector array
+		for (int draw = 0; draw < (int)theExplosions.size(); draw++)
+		{
+			theExplosions[draw]->render(theRenderer, &theExplosions[draw]->getSourceRect(), &theExplosions[draw]->getSpritePos(), theExplosions[draw]->getSpriteScale());
+		}
+		// Render the Title
+		cTexture* tempTextTexture = theTextureMgr->getTexture("Title");
+		SDL_Rect pos = { 10, 10, tempTextTexture->getTextureRect().w, tempTextTexture->getTextureRect().h };
+		FPoint scale = { 1, 1 };
+		tempTextTexture->renderTexture(theRenderer, tempTextTexture->getTexture(), &tempTextTexture->getTextureRect(), &pos, scale);
+		// Render updated score value
+
+
+		// render the hero Ship
+		heroShip.render(theRenderer, &heroShip.getSpriteDimensions(), &heroShip.getSpritePos(), heroShip.getSpriteRotAngle(), &heroShip.getSpriteCentre(), heroShip.getSpriteScale());
+		SDL_RenderPresent(theRenderer);
 	}
-	// Render the Title
-	cTexture* tempTextTexture = theTextureMgr->getTexture("Title");
-	SDL_Rect pos = { 10, 10, tempTextTexture->getTextureRect().w, tempTextTexture->getTextureRect().h };
-	FPoint scale = { 1, 1 };
-	tempTextTexture->renderTexture(theRenderer, tempTextTexture->getTexture(), &tempTextTexture->getTextureRect(), &pos, scale);
-	// Render updated score value
-	
-	// Lab 7 code goes here
-	
-	// render the hero Ship
-	heroShip.render(theRenderer, &heroShip.getSpriteDimensions(), &heroShip.getSpritePos(), heroShip.getSpriteRotAngle(), &heroShip.getSpriteCentre(), heroShip.getSpriteScale());
-	SDL_RenderPresent(theRenderer);
+
+	break;
+
+	case gameState::end:
+	{
+
+	}
+	break;
+
+	}
 }
 
 void cGame::render(SDL_Window* theSDLWND, SDL_Renderer* theRenderer, double rotAngle, SDL_Point* spriteCentre)
 {
-
 	SDL_RenderPresent(theRenderer);
 }
 
 void cGame::update()
 {
-
+	
 }
 
 void cGame::update(double deltaTime)
 {
+	IPoint heroPos = { (int)heroShip.getSpritePos().x, (int)heroShip.getSpritePos().y };
+	if (heroPos.X >= 910 || heroPos.X <= 0)
+	{
+		heroShip.setSpritePos({ heroShip.getSpritePos().x, heroShip.getSpritePos().y });
+		heroShip.setRocketMove(heroShip.getRocketMove()*(-1));
+	}
+	
+
 	// Update the visibility and position of each asteriod
 	vector<cAsteroid*>::iterator asteroidIterator = theenemies.begin();
 	while (asteroidIterator != theenemies.end())
@@ -304,24 +381,24 @@ bool cGame::getInput(bool theLoop)
 					break;
 				case SDLK_DOWN:
 				{
-					heroShip.setRocketMove(1);
+					
 				}
 				break;
 
 				case SDLK_UP:
 				{
-					heroShip.setRocketMove(-1);
+					
 				}
 				break;
 				case SDLK_RIGHT:
 				{
-					heroShip.setSpriteRotAngle(heroShip.getSpriteRotAngle() +5);
+					heroShip.setRocketMove(-1);
 				}
 				break;
 
 				case SDLK_LEFT:
 				{
-					heroShip.setSpriteRotAngle(heroShip.getSpriteRotAngle() - 5);
+					heroShip.setRocketMove(1);
 				}
 				break;
 				case SDLK_SPACE:
@@ -335,7 +412,7 @@ bool cGame::getInput(bool theLoop)
 					thelasers[numBullets]->setBulletVelocity(5);
 					thelasers[numBullets]->setSpriteRotAngle(heroShip.getSpriteRotAngle() -90.0f );
 					thelasers[numBullets]->setActive(true);
-					cout << "Bullet added to Vector at position - x: " << heroShip.getBoundingRect().x << " y: " << heroShip.getBoundingRect().y << endl;
+					cout << "Laser added to Vector at position - x: " << heroShip.getBoundingRect().x << " y: " << heroShip.getBoundingRect().y << endl;
 				}
 				theSoundMgr->getSnd("laser")->play(0);
 				break;
