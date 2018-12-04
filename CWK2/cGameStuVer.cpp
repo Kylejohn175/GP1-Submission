@@ -157,7 +157,7 @@ void cGame::render(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 	
 	// Lab 7 code goes here
 	
-	// render the rocket
+	// render the hero Ship
 	heroShip.render(theRenderer, &heroShip.getSpriteDimensions(), &heroShip.getSpritePos(), heroShip.getSpriteRotAngle(), &heroShip.getSpriteCentre(), heroShip.getSpriteScale());
 	SDL_RenderPresent(theRenderer);
 }
@@ -332,8 +332,8 @@ bool cGame::getInput(bool theLoop)
 					thelasers[numBullets]->setSpriteTranslation({ 50, 50 });
 					thelasers[numBullets]->setTexture(theTextureMgr->getTexture("laser"));
 					thelasers[numBullets]->setSpriteDimensions(theTextureMgr->getTexture("laser")->getTWidth(), theTextureMgr->getTexture("laser")->getTHeight());
-					thelasers[numBullets]->setBulletVelocity(50);
-					thelasers[numBullets]->setSpriteRotAngle(heroShip.getSpriteRotAngle());
+					thelasers[numBullets]->setBulletVelocity(5);
+					thelasers[numBullets]->setSpriteRotAngle(heroShip.getSpriteRotAngle() -90.0f );
 					thelasers[numBullets]->setActive(true);
 					cout << "Bullet added to Vector at position - x: " << heroShip.getBoundingRect().x << " y: " << heroShip.getBoundingRect().y << endl;
 				}
