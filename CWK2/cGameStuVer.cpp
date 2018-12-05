@@ -95,10 +95,12 @@ void cGame::initialise(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 		theSoundMgr->add(soundList[sounds], soundsToUse[sounds], soundTypes[sounds]);
 	}
 
+	theSoundMgr->getSnd("gametheme")->play(-1);
+
 	//Load game buttons
 	btnNameList = { "Start", "Quit", "Highscore", "Back" };
 	btnTexturesToUse = { "Images\\Sprites\\start.png", "Images\\Sprites\\quit.png", "Images\\Sprites\\highscore.png", "Images\\Sprites\\back.png" };
-	btnPos = { { 475, 350 },{ 475, 400 },{ 475, 450 }, { 475, 350 } };
+	btnPos = { { 450, 375 },{ 455, 425 },{ 467, 475 }, { 475, 350 } };
 	for (unsigned int bCount = 0; bCount < btnNameList.size(); bCount++)
 	{
 		theTextureMgr->addTexture(btnNameList[bCount], btnTexturesToUse[bCount]);
@@ -153,25 +155,25 @@ void cGame::render(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 	switch (theGameState)
 	{
 	case gameState::menu:
-	{
-		//theSoundMgr->getSnd("menutheme")->play(-1);
+	{		
 
 		spriteBkgd.setTexture(theTextureMgr->getTexture("menuBackground"));
 		spriteBkgd.setSpriteDimensions(theTextureMgr->getTexture("menuBackground")->getTWidth(), theTextureMgr->getTexture("menuBackground")->getTHeight());
 		spriteBkgd.render(theRenderer, NULL, NULL, spriteBkgd.getSpriteScale());
+		//spriteBkgd.setSpriteRotAngle();
 
 		//Render the Title
 			tempTextTexture = theTextureMgr->getTexture("Title");
-		pos = { 150, 150, tempTextTexture->getTextureRect().w, tempTextTexture->getTextureRect().h };
+		pos = { 250, 150, tempTextTexture->getTextureRect().w, tempTextTexture->getTextureRect().h };
 		scale = { 1, 1 };
 		tempTextTexture->renderTexture(theRenderer, tempTextTexture->getTexture(), &tempTextTexture->getTextureRect(), &pos, scale);
 
 		//Render Button
-			theButtonMgr->getBtn("Start")->setSpritePos({ 400, 375 });
+			theButtonMgr->getBtn("Start")->setSpritePos({ 450, 375 });
 		theButtonMgr->getBtn("Start")->render(theRenderer, &theButtonMgr->getBtn("Start")->getSpriteDimensions(), &theButtonMgr->getBtn("Start")->getSpritePos(), theButtonMgr->getBtn("Start")->getSpriteScale());
-		theButtonMgr->getBtn("Quit")->setSpritePos({ 400, 425 });
+		theButtonMgr->getBtn("Quit")->setSpritePos({ 455, 425 });
 		theButtonMgr->getBtn("Quit")->render(theRenderer, &theButtonMgr->getBtn("Quit")->getSpriteDimensions(), &theButtonMgr->getBtn("Quit")->getSpritePos(), theButtonMgr->getBtn("Quit")->getSpriteScale());
-		theButtonMgr->getBtn("Highscore")->setSpritePos({ 400, 475 });
+		theButtonMgr->getBtn("Highscore")->setSpritePos({ 467, 475 });
 		theButtonMgr->getBtn("Highscore")->render(theRenderer, &theButtonMgr->getBtn("Highscore")->getSpriteDimensions(), &theButtonMgr->getBtn("Highscore")->getSpritePos(), theButtonMgr->getBtn("Highscore")->getSpriteScale());
 	}
 	break;
@@ -188,8 +190,6 @@ void cGame::render(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 		heroShip.setSpriteDimensions(theTextureMgr->getTexture("spaceship1")->getTWidth(), theTextureMgr->getTexture("spaceship1")->getTHeight());
 		heroShip.setRocketVelocity(100);
 		heroShip.setSpriteTranslation({ 50,50 });
-
-		theSoundMgr->getSnd("gametheme")->play(-1);
 
 		spriteBkgd.render(theRenderer, NULL, NULL, spriteBkgd.getSpriteScale());
 		//Render each asteroid in the vector array
@@ -253,27 +253,28 @@ void cGame::update()
 
 void cGame::update(double deltaTime)
 {
-	// CHeck Button clicked and change state
-	if (theGameState == gameState::menu || theGameState == gameState::end)
+	if (theGameState == gameState::menu)
 	{
+		theGameState = theButtonMgr->getBtn("Start")->update(theGameState, gameState::playing, theAreaClicked);
+		gameOver = false;
+	
 		theGameState = theButtonMgr->getBtn("Quit")->update(theGameState, gameState::end, theAreaClicked);
+
+		theGameState = theButtonMgr->getBtn("Highscore")->update(theGameState, gameState::highscore, theAreaClicked);
 	}
+
+	// CHeck Button clicked and change state
+	//if (theGameState == gameState::menu || theGameState == gameState::end)
+	//{
+		//theGameState = theButtonMgr->getBtn("Quit")->update(theGameState, gameState::end, theAreaClicked);
+	//}
 
 	if (theGameState == gameState::highscore)
 	{
 		spriteBkgd.setTexture(theTextureMgr->getTexture("menuBackground"));
 		spriteBkgd.setSpriteDimensions(theTextureMgr->getTexture("menuBackground")->getTWidth(), theTextureMgr->getTexture("menuBackground")->getTHeight());
-		theGameState = theButtonMgr->getBtn("back")->update(theGameState, gameState::menu, theAreaClicked);
+		theGameState = theButtonMgr->getBtn("Back")->update(theGameState, gameState::menu, theAreaClicked);
 	}
-
-	if (theGameState == gameState::menu)
-	{
-		theGameState = theButtonMgr->getBtn("play_btn")->update(theGameState, gameState::playing, theAreaClicked);
-		gameOver = false;
-	}
-
-	theGameState = theButtonMgr->getBtn("menu_btn")->update(theGameState, gameState::menu, theAreaClicked);
-	theGameState = theButtonMgr->getBtn("hs_btn")->update(theGameState, gameState::highscore, theAreaClicked);
 
 	if (theGameState == gameState::playing)
 	{
