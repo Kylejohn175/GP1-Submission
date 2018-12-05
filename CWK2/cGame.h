@@ -79,6 +79,8 @@ private:
 	SDL_Rect pos;
 	FPoint scale;
 	btnTypes theBtnType;
+	bool gameOver = false;
+	SDL_Point theAreaClicked;
 
 };
 

@@ -30,7 +30,7 @@ using namespace std::chrono;
 using namespace std;
 
 //Define the string to appear in the top left corner of the window
-#define WINDOW_TITLE "Asteroids!! - The Game"
+#define WINDOW_TITLE "SPACE DEFENDERS"
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
 
@@ -53,6 +53,6 @@ inline SDL_Point operator+(SDL_Point const &a, SDL_Point const &b)
 
 enum class textType {solid, blended, shaded};
 enum class soundType {sfx, music};
-enum class gameState {menu, playing, end};
-enum class btnTypes { exit, play, hscore };
+enum class gameState {menu, playing, end, quit, highscore};
+enum class btnTypes { start, play, exit };
 #endif
