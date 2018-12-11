@@ -84,7 +84,7 @@
       <SubSystem>Console</SubSystem>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y "$(ProjectDir)Images\*.*" "$(OutDir)Images\"
+      <Command>xcopy /Y /S "$(ProjectDir)Images\*.*" "$(OutDir)Images\"
 xcopy /Y "$(ProjectDir)Audio\*.*" "$(OutDir)Audio\"
 xcopy /Y "$(ProjectDir)Fonts\*.*" "$(OutDir)Fonts\"
 xcopy /Y "SDL2\SDL2-2.0.4\lib\x86\SDL2.dll" "$(OutDir)"
@@ -120,7 +120,7 @@ xcopy /Y "SDL2\SDL2_mixer-2.0.1\lib\x86\*.dll" "$(OutDir)"
       <SubSystem>Windows</SubSystem>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y "$(ProjectDir)Images\*.*" "$(OutDir)Images\"
+      <Command>xcopy /Y /S "$(ProjectDir)Images\*.*" "$(OutDir)Images\"
 xcopy /Y "$(ProjectDir)Audio\*.*" "$(OutDir)Audio\"
 xcopy /Y "$(ProjectDir)Fonts\*.*" "$(OutDir)Fonts\"
 xcopy /Y "SDL2\SDL2-2.0.4\lib\x86\SDL2.dll" "$(OutDir)"

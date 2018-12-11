@@ -53,6 +53,6 @@ inline SDL_Point operator+(SDL_Point const &a, SDL_Point const &b)
 
 enum class textType {solid, blended, shaded};
 enum class soundType {sfx, music};
-enum class gameState {menu, playing, end, quit, highscore};
+enum class gameState {menu, playing, end, gameover, quit};
 enum class btnTypes { start, play, exit, back };
 #endif

@@ -45,11 +45,11 @@ void cGame::initialise(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 	SDL_SetRenderDrawColor(theRenderer, 0, 0, 0, 255);
 	SDL_RenderPresent(theRenderer);
 	
-	/* Let the computer pick a random number */
-	random_device rd;    // non-deterministic engine 
-	mt19937 gen{ rd() }; // deterministic engine. For most common uses, std::mersenne_twister_engine, fast and high-quality.
-	uniform_int_distribution<> AsteroidDis{ 1, 5 };
-	uniform_int_distribution<> AsteroidTextDis{ 0, 4 };
+	///* Let the computer pick a random number */
+	//random_device rd;    // non-deterministic engine 
+	//mt19937 gen{ rd() }; // deterministic engine. For most common uses, std::mersenne_twister_engine, fast and high-quality.
+	//uniform_int_distribution<> AsteroidDis{ 1, 5 };
+	//uniform_int_distribution<> AsteroidTextDis{ 1, 1 };
 
 	theTextureMgr->setRenderer(theRenderer);
 	theFontMgr->initFontLib();
@@ -65,19 +65,34 @@ void cGame::initialise(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 	}
 
 	// Create textures for Game Dialogue (text)
-	fontList = { "digital", "spaceAge", "8bit" };
-	fontsToUse = { "Fonts/digital-7.ttf", "Fonts/space age.ttf", "Fonts/8bit.ttf" };
+	fontList = { "digital", "spaceAge", "8bit", "8bitI" };
+	fontsToUse = { "Fonts/digital-7.ttf", "Fonts/space age.ttf", "Fonts/8bit.ttf", "Fonts/8bit.ttf" };
 	for (int fonts = 0; fonts < (int)fontList.size(); fonts++)
 	{
-		theFontMgr->addFont(fontList[fonts], fontsToUse[fonts], 36);
+		if (fonts == 3)
+		{
+			theFontMgr->addFont(fontList[fonts], fontsToUse[fonts], 14);
+		}
+		else
+		{
+			theFontMgr->addFont(fontList[fonts], fontsToUse[fonts], 36);
+		}
 	}
 
 	// Create text Textures
-	gameTextNames = { "enemies", "score", "Title"};
-	gameTextList = { "Enemies", "Score: ", "SPACE DEFENDERS"};
+	gameTextNames = { "enemies", "score", "Title", "highscore", "Instructions", "gameover"};
+	gameTextList = { "Enemies", "Score ", "SPACE DEFENDERS", "HIGHSCORE", "Left and Right Arrows to move! Space to shoot! Dont let the enemies reach Earth!", "GAME OVER"};
 	for (unsigned int text = 0; text < gameTextNames.size(); text++)
 	{
-		theTextureMgr->addTexture(gameTextNames[text], theFontMgr->getFont("8bit")->createTextTexture(theRenderer, gameTextList[text], textType::solid, { 44, 203, 112, 255 }, { 0, 0, 0, 0 }));
+		if (text == 4)
+		{
+			theTextureMgr->addTexture(gameTextNames[text], theFontMgr->getFont("8bitI")->createTextTexture(theRenderer, gameTextList[text], textType::solid, { 44, 203, 112, 255 }, { 0, 0, 0, 0 }));
+		}
+		else
+		{
+			theTextureMgr->addTexture(gameTextNames[text], theFontMgr->getFont("8bit")->createTextTexture(theRenderer, gameTextList[text], textType::solid, { 44, 203, 112, 255 }, { 0, 0, 0, 0 }));
+		}
+		//theTextureMgr->addTexture(gameTextNames[text], theFontMgr->getFont("8bit")->createTextTexture(theRenderer, gameTextList[text], textType::solid, { 44, 203, 112, 255 }, { 0, 0, 0, 0 }));
 	}
 
 	strScore = gameTextList[1];
@@ -85,6 +100,7 @@ void cGame::initialise(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 	
 	theTextureMgr->addTexture("Title", theFontMgr->getFont("8bit")->createTextTexture(theRenderer, gameTextList[0], textType::solid, { 0, 255, 0, 255 }, { 0, 0, 0, 0 }));
 	theTextureMgr->addTexture("theScore", theFontMgr->getFont("8bit")->createTextTexture(theRenderer, strScore.c_str(), textType::solid, { 0, 255, 0, 255 }, { 0, 0, 0, 0 }));
+	theTextureMgr->addTexture("Instructions", theFontMgr->getFont("8bitI")->createTextTexture(theRenderer, strScore.c_str(), textType::solid, { 0, 255, 0, 255 }, { 0, 0, 0, 0 }));
 
 	// Load game sounds
 	soundList = { "gametheme", "laser", "explosion", "menutheme", "gameover"};
@@ -116,26 +132,30 @@ void cGame::initialise(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 
 	theGameState = gameState::menu;
 	theBtnType = btnTypes::exit;
+	
+	heroShip.setSpritePos({ 475 , 600 });
+	heroShip.setTexture(theTextureMgr->getTexture("spaceship1"));
+	heroShip.setSpriteDimensions(theTextureMgr->getTexture("spaceship1")->getTWidth(), theTextureMgr->getTexture("spaceship1")->getTHeight());
+	heroShip.setRocketVelocity(100);
+	heroShip.setSpriteTranslation({ 50,50 });
 
-	// Create vector array of textures
-
-	for (int astro = 0; astro < 5; astro++)
+	for (int astro = 0; astro < 9; astro++)
 	{
 		theenemies.push_back(new cAsteroid);
-		theenemies[astro]->setSpritePos({ 900 * AsteroidDis(gen),0 });
-		theenemies[astro]->setSpriteTranslation({ 0, -60 });
+		theenemies[astro]->setSpritePos({ (50 * (astro + 1) + (50 * astro)), -75 });
+		theenemies[astro]->setSpriteTranslation({ 0, -50 });
 		int randAsteroid = AsteroidTextDis(gen);
 		theenemies[astro]->setTexture(theTextureMgr->getTexture(textureName[randAsteroid]));
 		theenemies[astro]->setSpriteDimensions(theTextureMgr->getTexture(textureName[randAsteroid])->getTWidth(), theTextureMgr->getTexture(textureName[randAsteroid])->getTHeight());
 		theenemies[astro]->setAsteroidVelocity(200);
+		theenemies[astro]->setSpriteRotAngle(180);
 		theenemies[astro]->setActive(true);
 	}
-
 }
 
 void cGame::run(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 {
-	bool loop = true;
+	
 
 	while (loop)
 	{
@@ -168,13 +188,19 @@ void cGame::render(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 		scale = { 1, 1 };
 		tempTextTexture->renderTexture(theRenderer, tempTextTexture->getTexture(), &tempTextTexture->getTextureRect(), &pos, scale);
 
+		//Render the instructions
+		tempTextTexture = theTextureMgr->getTexture("Instructions");
+		pos = { 10, 700, tempTextTexture->getTextureRect().w, tempTextTexture->getTextureRect().h };
+		scale = { 1, 1 };
+		tempTextTexture->renderTexture(theRenderer, tempTextTexture->getTexture(), &tempTextTexture->getTextureRect(), &pos, scale);
+
 		//Render Button
 			theButtonMgr->getBtn("Start")->setSpritePos({ 450, 375 });
 		theButtonMgr->getBtn("Start")->render(theRenderer, &theButtonMgr->getBtn("Start")->getSpriteDimensions(), &theButtonMgr->getBtn("Start")->getSpritePos(), theButtonMgr->getBtn("Start")->getSpriteScale());
 		theButtonMgr->getBtn("Quit")->setSpritePos({ 455, 425 });
 		theButtonMgr->getBtn("Quit")->render(theRenderer, &theButtonMgr->getBtn("Quit")->getSpriteDimensions(), &theButtonMgr->getBtn("Quit")->getSpritePos(), theButtonMgr->getBtn("Quit")->getSpriteScale());
-		theButtonMgr->getBtn("Highscore")->setSpritePos({ 467, 475 });
-		theButtonMgr->getBtn("Highscore")->render(theRenderer, &theButtonMgr->getBtn("Highscore")->getSpriteDimensions(), &theButtonMgr->getBtn("Highscore")->getSpritePos(), theButtonMgr->getBtn("Highscore")->getSpriteScale());
+		//theButtonMgr->getBtn("Highscore")->setSpritePos({ 467, 475 });
+		//theButtonMgr->getBtn("Highscore")->render(theRenderer, &theButtonMgr->getBtn("Highscore")->getSpriteDimensions(), &theButtonMgr->getBtn("Highscore")->getSpritePos(), theButtonMgr->getBtn("Highscore")->getSpriteScale());
 	}
 	break;
 
@@ -185,11 +211,11 @@ void cGame::render(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 		spriteBkgd.setTexture(theTextureMgr->getTexture("gameBackground"));
 		spriteBkgd.setSpriteDimensions(theTextureMgr->getTexture("gameBackground")->getTWidth(), theTextureMgr->getTexture("gameBackground")->getTHeight());
 
-		heroShip.setSpritePos({ 475 , 600 });
+		/*heroShip.setSpritePos({ 475 , 600 });
 		heroShip.setTexture(theTextureMgr->getTexture("spaceship1"));
 		heroShip.setSpriteDimensions(theTextureMgr->getTexture("spaceship1")->getTWidth(), theTextureMgr->getTexture("spaceship1")->getTHeight());
 		heroShip.setRocketVelocity(100);
-		heroShip.setSpriteTranslation({ 50,50 });
+		heroShip.setSpriteTranslation({ 50,50 });*/
 
 		spriteBkgd.render(theRenderer, NULL, NULL, spriteBkgd.getSpriteScale());
 		//Render each asteroid in the vector array
@@ -207,16 +233,23 @@ void cGame::render(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 			{
 				theExplosions[draw]->render(theRenderer, &theExplosions[draw]->getSourceRect(), &theExplosions[draw]->getSpritePos(), theExplosions[draw]->getSpriteScale());
 			}
+
 		//Render the Title
-			cTexture* tempTextTexture = theTextureMgr->getTexture("Title");
+			cTexture* tempTextTexture = theTextureMgr->getTexture("theScore");
 		SDL_Rect pos = { 10, 10, tempTextTexture->getTextureRect().w, tempTextTexture->getTextureRect().h };
 		FPoint scale = { 1, 1 };
 		tempTextTexture->renderTexture(theRenderer, tempTextTexture->getTexture(), &tempTextTexture->getTextureRect(), &pos, scale);
+
 		//Render updated score value
+		if (updateScore)
+		{
+			theTextureMgr->deleteTexture("theScore");
+			theTextureMgr->addTexture("theScore", theFontMgr->getFont("8bit")->createTextTexture(theRenderer, strScore.c_str(), textType::solid, { 0, 255, 0, 255 }, { 0, 0, 0, 0 }));
+			updateScore = false;
+		}
 
-
-			//render the hero Ship
-			heroShip.render(theRenderer, &heroShip.getSpriteDimensions(), &heroShip.getSpritePos(), heroShip.getSpriteRotAngle(), &heroShip.getSpriteCentre(), heroShip.getSpriteScale());
+		//render the hero Ship
+		heroShip.render(theRenderer, &heroShip.getSpriteDimensions(), &heroShip.getSpritePos(), heroShip.getSpriteRotAngle(), &heroShip.getSpriteCentre(), heroShip.getSpriteScale());
 		SDL_RenderPresent(theRenderer);
 	}
 
@@ -228,10 +261,26 @@ void cGame::render(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 	}
 	break;
 
-	case gameState::highscore:
+	case gameState::gameover:
 	{
+		spriteBkgd.setTexture(theTextureMgr->getTexture("menuBackground"));
+		spriteBkgd.setSpriteDimensions(theTextureMgr->getTexture("menuBackground")->getTWidth(), theTextureMgr->getTexture("menuBackground")->getTHeight());
+		spriteBkgd.render(theRenderer, NULL, NULL, spriteBkgd.getSpriteScale());
+
+		//Render the Header
+		tempTextTexture = theTextureMgr->getTexture("gameover");
+		pos = { 350, 150, tempTextTexture->getTextureRect().w, tempTextTexture->getTextureRect().h };
+		scale = { 1, 1 };
+		tempTextTexture->renderTexture(theRenderer, tempTextTexture->getTexture(), &tempTextTexture->getTextureRect(), &pos, scale);
+
+		//Render the Score
+		cTexture* tempTextTexture = theTextureMgr->getTexture("theScore");
+		SDL_Rect pos = { 350, 300, tempTextTexture->getTextureRect().w, tempTextTexture->getTextureRect().h };
+		FPoint scale = { 1, 1 };
+		tempTextTexture->renderTexture(theRenderer, tempTextTexture->getTexture(), &tempTextTexture->getTextureRect(), &pos, scale);
+
 		// Render the Button
-		theButtonMgr->getBtn("Back")->setSpritePos({ 250, 500 });
+		theButtonMgr->getBtn("Back")->setSpritePos({ 100, 600 });
 		theButtonMgr->getBtn("Back")->render(theRenderer, &theButtonMgr->getBtn("Back")->getSpriteDimensions(), &theButtonMgr->getBtn("Back")->getSpritePos(), theButtonMgr->getBtn("Back")->getSpriteScale());
 	}
 	break;
@@ -260,16 +309,16 @@ void cGame::update(double deltaTime)
 	
 		theGameState = theButtonMgr->getBtn("Quit")->update(theGameState, gameState::end, theAreaClicked);
 
-		theGameState = theButtonMgr->getBtn("Highscore")->update(theGameState, gameState::highscore, theAreaClicked);
+		theGameState = theButtonMgr->getBtn("Highscore")->update(theGameState, gameState::gameover, theAreaClicked);
 	}
 
-	// CHeck Button clicked and change state
+	// Check Button clicked and change state
 	//if (theGameState == gameState::menu || theGameState == gameState::end)
 	//{
 		//theGameState = theButtonMgr->getBtn("Quit")->update(theGameState, gameState::end, theAreaClicked);
 	//}
 
-	if (theGameState == gameState::highscore)
+	if (theGameState == gameState::gameover)
 	{
 		spriteBkgd.setTexture(theTextureMgr->getTexture("menuBackground"));
 		spriteBkgd.setSpriteDimensions(theTextureMgr->getTexture("menuBackground")->getTWidth(), theTextureMgr->getTexture("menuBackground")->getTHeight());
@@ -280,8 +329,13 @@ void cGame::update(double deltaTime)
 	{
 		if (gameOver)
 		{
-			theGameState = gameState::end;
+			theGameState = gameState::gameover;
 		}
+	}
+
+	if (theGameState == gameState::end)
+	{
+		loop = false;
 	}
 
 	IPoint heroPos = { (int)heroShip.getSpritePos().x, (int)heroShip.getSpritePos().y };
@@ -303,6 +357,11 @@ void cGame::update(double deltaTime)
 		else
 		{
 			(*asteroidIterator)->update(deltaTime);
+			if ((*asteroidIterator)->getSpritePos().y >= 632)
+			{
+				gameOver = true;
+			}
+
 			++asteroidIterator;
 		}
 	}
@@ -359,15 +418,41 @@ void cGame::update(double deltaTime)
 				theExplosions[index]->setSpriteDimensions(theTextureMgr->getTexture("explosion")->getTWidth()/ theExplosions[index]->getNoFrames(), theTextureMgr->getTexture("explosion")->getTHeight());
 				theExplosions[index]->setSpritePos({ (*asteroidIterator)->getSpritePos().x + (int)((*asteroidIterator)->getSpritePos().w/2), (*asteroidIterator)->getSpritePos().y + (int)((*asteroidIterator)->getSpritePos().h / 2) });
 
+
 				theSoundMgr->getSnd("explosion")->play(0);
 				
+				theScore += 100;
+				strScore = gameTextList[1];
+				strScore += to_string(theScore).c_str();
+				updateScore = true;
 			}
 		}
 	}
 
 
-	// Update the Rockets position
+	// Update the hero and enemy position
 	heroShip.update(deltaTime);
+	if (frames % 360 == 0)
+	{
+		int currentSize = theenemies.size();
+		int end = currentSize + 9;
+		int count = 0;
+		for (int astro = currentSize; astro < end; astro++)
+		{
+			theenemies.push_back(new cAsteroid);
+			theenemies[astro]->setSpritePos({ (50 * (count + 1) + (50 * count)), -75 });
+			theenemies[astro]->setSpriteTranslation({ 0, -50 });
+			int randAsteroid = AsteroidTextDis(gen);
+			theenemies[astro]->setTexture(theTextureMgr->getTexture("spaceship2"));
+			theenemies[astro]->setSpriteDimensions(theTextureMgr->getTexture(textureName[randAsteroid])->getTWidth(), theTextureMgr->getTexture(textureName[randAsteroid])->getTHeight());
+			theenemies[astro]->setAsteroidVelocity(200);
+			theenemies[astro]->setSpriteRotAngle(180);
+			theenemies[astro]->setActive(true);
+			count++;
+		}
+	}
+
+	frames++;
 }
 
 bool cGame::getInput(bool theLoop)
@@ -388,6 +473,7 @@ bool cGame::getInput(bool theLoop)
 				{
 				case SDL_BUTTON_LEFT:
 				{
+					theAreaClicked = { event.motion.x, event.motion.y };
 				}
 				break;
 				case SDL_BUTTON_RIGHT:
@@ -431,12 +517,14 @@ bool cGame::getInput(bool theLoop)
 				case SDLK_RIGHT:
 				{
 					heroShip.setRocketMove(-1);
+					cout << "Right" << endl;
 				}
 				break;
 
 				case SDLK_LEFT:
 				{
 					heroShip.setRocketMove(1);
+					cout << "Left" << endl;
 				}
 				break;
 				case SDLK_SPACE:
