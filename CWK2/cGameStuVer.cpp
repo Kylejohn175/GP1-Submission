@@ -136,21 +136,9 @@ void cGame::initialise(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 	heroShip.setSpritePos({ 475 , 600 });
 	heroShip.setTexture(theTextureMgr->getTexture("spaceship1"));
 	heroShip.setSpriteDimensions(theTextureMgr->getTexture("spaceship1")->getTWidth(), theTextureMgr->getTexture("spaceship1")->getTHeight());
-	heroShip.setRocketVelocity(100);
+	heroShip.setRocketVelocity(200);
 	heroShip.setSpriteTranslation({ 50,50 });
 
-	for (int astro = 0; astro < 9; astro++)
-	{
-		theenemies.push_back(new cAsteroid);
-		theenemies[astro]->setSpritePos({ (50 * (astro + 1) + (50 * astro)), -75 });
-		theenemies[astro]->setSpriteTranslation({ 0, -50 });
-		int randAsteroid = AsteroidTextDis(gen);
-		theenemies[astro]->setTexture(theTextureMgr->getTexture(textureName[randAsteroid]));
-		theenemies[astro]->setSpriteDimensions(theTextureMgr->getTexture(textureName[randAsteroid])->getTWidth(), theTextureMgr->getTexture(textureName[randAsteroid])->getTHeight());
-		theenemies[astro]->setAsteroidVelocity(200);
-		theenemies[astro]->setSpriteRotAngle(180);
-		theenemies[astro]->setActive(true);
-	}
 }
 
 void cGame::run(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
@@ -304,6 +292,10 @@ void cGame::update(double deltaTime)
 {
 	if (theGameState == gameState::menu)
 	{
+		theScore = 0;
+		strScore = gameTextList[1];
+		strScore += to_string(theScore).c_str();
+
 		theGameState = theButtonMgr->getBtn("Start")->update(theGameState, gameState::playing, theAreaClicked);
 		gameOver = false;
 	
@@ -322,14 +314,41 @@ void cGame::update(double deltaTime)
 	{
 		spriteBkgd.setTexture(theTextureMgr->getTexture("menuBackground"));
 		spriteBkgd.setSpriteDimensions(theTextureMgr->getTexture("menuBackground")->getTWidth(), theTextureMgr->getTexture("menuBackground")->getTHeight());
+		
 		theGameState = theButtonMgr->getBtn("Back")->update(theGameState, gameState::menu, theAreaClicked);
 	}
 
 	if (theGameState == gameState::playing)
 	{
+		// Update the hero and enemy position
+		heroShip.update(deltaTime);
+
+		if (frames % 360 == 0)
+		{
+			int currentSize = theenemies.size();
+			int end = currentSize + 9;
+			int count = 0;
+			for (int astro = currentSize; astro < end; astro++)
+			{
+				theenemies.push_back(new cAsteroid);
+				theenemies[astro]->setSpritePos({ (50 * (count + 1) + (50 * count)), -75 });
+				theenemies[astro]->setSpriteTranslation({ 0, -80 });
+				int randAsteroid = AsteroidTextDis(gen);
+				theenemies[astro]->setTexture(theTextureMgr->getTexture("spaceship2"));
+				theenemies[astro]->setSpriteDimensions(theTextureMgr->getTexture(textureName[randAsteroid])->getTWidth(), theTextureMgr->getTexture(textureName[randAsteroid])->getTHeight());
+				theenemies[astro]->setAsteroidVelocity(200);
+				theenemies[astro]->setSpriteRotAngle(180);
+				theenemies[astro]->setActive(true);
+				count++;
+			}
+		}
+
 		if (gameOver)
 		{
+			theSoundMgr->getSnd("gameover")->play(0);
 			theGameState = gameState::gameover;
+			theenemies.clear();
+			updateScore = true;
 		}
 	}
 
@@ -429,28 +448,18 @@ void cGame::update(double deltaTime)
 		}
 	}
 
-
-	// Update the hero and enemy position
-	heroShip.update(deltaTime);
-	if (frames % 360 == 0)
-	{
-		int currentSize = theenemies.size();
-		int end = currentSize + 9;
-		int count = 0;
-		for (int astro = currentSize; astro < end; astro++)
-		{
-			theenemies.push_back(new cAsteroid);
-			theenemies[astro]->setSpritePos({ (50 * (count + 1) + (50 * count)), -75 });
-			theenemies[astro]->setSpriteTranslation({ 0, -50 });
-			int randAsteroid = AsteroidTextDis(gen);
-			theenemies[astro]->setTexture(theTextureMgr->getTexture("spaceship2"));
-			theenemies[astro]->setSpriteDimensions(theTextureMgr->getTexture(textureName[randAsteroid])->getTWidth(), theTextureMgr->getTexture(textureName[randAsteroid])->getTHeight());
-			theenemies[astro]->setAsteroidVelocity(200);
-			theenemies[astro]->setSpriteRotAngle(180);
-			theenemies[astro]->setActive(true);
-			count++;
-		}
-	}
+	//for (int astro = 0; astro < 9; astro++)
+	//{
+	//	theenemies.push_back(new cAsteroid);
+	//	theenemies[astro]->setSpritePos({ (50 * (astro + 1) + (50 * astro)), -75 });
+	//	theenemies[astro]->setSpriteTranslation({ 0, -75 });
+	//	int randAsteroid = AsteroidTextDis(gen);
+	//	theenemies[astro]->setTexture(theTextureMgr->getTexture(textureName[randAsteroid]));
+	//	theenemies[astro]->setSpriteDimensions(theTextureMgr->getTexture(textureName[randAsteroid])->getTWidth(), theTextureMgr->getTexture(textureName[randAsteroid])->getTHeight());
+	//	theenemies[astro]->setAsteroidVelocity(200);
+	//	theenemies[astro]->setSpriteRotAngle(180);
+	//	theenemies[astro]->setActive(true);
+	//}
 
 	frames++;
 }
@@ -529,18 +538,22 @@ bool cGame::getInput(bool theLoop)
 				break;
 				case SDLK_SPACE:
 				{
-					thelasers.push_back(new cBullet);
-					int numBullets = thelasers.size() - 1;
-					thelasers[numBullets]->setSpritePos({ heroShip.getBoundingRect().x + heroShip.getSpriteCentre().x, heroShip.getBoundingRect().y + heroShip.getSpriteCentre().y });
-					thelasers[numBullets]->setSpriteTranslation({ 50, 50 });
-					thelasers[numBullets]->setTexture(theTextureMgr->getTexture("laser"));
-					thelasers[numBullets]->setSpriteDimensions(theTextureMgr->getTexture("laser")->getTWidth(), theTextureMgr->getTexture("laser")->getTHeight());
-					thelasers[numBullets]->setBulletVelocity(5);
-					thelasers[numBullets]->setSpriteRotAngle(heroShip.getSpriteRotAngle() -90.0f );
-					thelasers[numBullets]->setActive(true);
-					cout << "Laser added to Vector at position - x: " << heroShip.getBoundingRect().x << " y: " << heroShip.getBoundingRect().y << endl;
+					if (theGameState == gameState::playing)
+					{
+						thelasers.push_back(new cBullet);
+						int numBullets = thelasers.size() - 1;
+						thelasers[numBullets]->setSpritePos({ heroShip.getBoundingRect().x + heroShip.getSpriteCentre().x, heroShip.getBoundingRect().y + heroShip.getSpriteCentre().y });
+						thelasers[numBullets]->setSpriteTranslation({ 50, 50 });
+						thelasers[numBullets]->setTexture(theTextureMgr->getTexture("laser"));
+						thelasers[numBullets]->setSpriteDimensions(theTextureMgr->getTexture("laser")->getTWidth(), theTextureMgr->getTexture("laser")->getTHeight());
+						thelasers[numBullets]->setBulletVelocity(5);
+						thelasers[numBullets]->setSpriteRotAngle(heroShip.getSpriteRotAngle() - 90.0f);
+						thelasers[numBullets]->setActive(true);
+						cout << "Laser added to Vector at position - x: " << heroShip.getBoundingRect().x << " y: " << heroShip.getBoundingRect().y << endl;
+						theSoundMgr->getSnd("laser")->play(0);
+					}
+
 				}
-				theSoundMgr->getSnd("laser")->play(0);
 				break;
 				default:
 					break;
